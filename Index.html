@@ -1,56 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>ברקוד שקילה</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EAN-13 Barcode Generator</title>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      max-width: 500px;
-      margin: 40px auto;
+      font-family: sans-serif;
+      margin: 0;
       padding: 20px;
-      border: 1px solid #ccc;
+      background: #f0f0f0;
+    }
+
+    .container {
+      max-width: 400px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
       border-radius: 12px;
-      background: #f9f9f9;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    input, button {
-      width: 100%;
-      font-size: 16px;
-      padding: 10px;
-      margin: 10px 0;
-    }
-    .result {
-      font-weight: bold;
-      font-size: 18px;
-      color: #007700;
-    }
-    #barcode {
-      margin-top: 20px;
+
+    h2 {
       text-align: center;
+      color: #333;
+    }
+
+    label {
+      margin-top: 15px;
+      display: block;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      font-size: 18px;
+      margin-top: 20px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .result {
+      text-align: center;
+      font-size: 18px;
+      margin-top: 20px;
+      color: #007700;
+      word-break: break-all;
+    }
+
+    svg {
+      display: block;
+      margin: 20px auto;
     }
   </style>
 </head>
 <body>
-  <h2>EAN-13 Barcode Generator</h2>
+  <div class="container">
+    <h2>EAN-13 Barcode Generator</h2>
 
-  <label for="shortCode">Short Code (e.g. 530):</label>
-  <input type="number" id="shortCode" placeholder="Enter 3 or 4 digit product code" />
+    <label for="shortCode">Short Code (e.g. 530):</label>
+    <input type="number" id="shortCode" placeholder="Enter product code" />
 
-  <label for="weight">Weight (kg):</label>
-  <input type="number" id="weight" step="0.001" placeholder="Enter weight in kg" />
+    <label for="weight">Weight in kg (e.g. 1.494):</label>
+    <input type="number" id="weight" step="0.001" placeholder="Enter weight" />
 
-  <button onclick="generateEAN13()">Generate EAN-13 Code</button>
+    <button onclick="generateEAN13()">Generate Barcode</button>
 
-  <p class="result" id="result"></p>
-  <div id="barcode">
+    <div class="result" id="resultText"></div>
     <svg id="barcodeImage"></svg>
   </div>
 
   <script>
     function padLeft(str, length) {
-      str = str.toString();
-      return str.padStart(length, '0');
+      return str.toString().padStart(length, '0');
     }
 
     function calculateChecksum(base) {
@@ -63,16 +103,23 @@
     }
 
     function generateEAN13() {
-      const shortCode = padLeft(document.getElementById("shortCode").value, 4);
-      const weightKg = parseFloat(document.getElementById("weight").value);
-      const weightGrams = padLeft(Math.round(weightKg * 1000), 5);
+      const short = document.getElementById("shortCode").value;
+      const weight = parseFloat(document.getElementById("weight").value);
 
-      const base = "290" + shortCode + weightGrams;
-      const checksum = calculateChecksum(base);
-      const fullCode = base + checksum;
+      if (!short || isNaN(weight)) {
+        document.getElementById("resultText").innerText = "Please enter both code and weight.";
+        return;
+      }
 
-      document.getElementById("result").innerText = "EAN-13: " + fullCode;
-      JsBarcode("#barcodeImage", fullCode, {
+      const shortCode = padLeft(short, 4);
+      const weightGrams = padLeft(Math.round(weight * 1000), 5);
+      const baseCode = "290" + shortCode + weightGrams;
+      const checksum = calculateChecksum(baseCode);
+      const finalCode = baseCode + checksum;
+
+      document.getElementById("resultText").innerText = "EAN-13 Code: " + finalCode;
+
+      JsBarcode("#barcodeImage", finalCode, {
         format: "ean13",
         lineColor: "#000",
         width: 2,
