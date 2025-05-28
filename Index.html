@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>EAN-13 Barcode Generator</title>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -24,6 +25,10 @@
       font-size: 18px;
       color: #007700;
     }
+    #barcode {
+      margin-top: 20px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -38,6 +43,9 @@
   <button onclick="generateEAN13()">Generate EAN-13 Code</button>
 
   <p class="result" id="result"></p>
+  <div id="barcode">
+    <svg id="barcodeImage"></svg>
+  </div>
 
   <script>
     function padLeft(str, length) {
@@ -64,6 +72,13 @@
       const fullCode = base + checksum;
 
       document.getElementById("result").innerText = "EAN-13: " + fullCode;
+      JsBarcode("#barcodeImage", fullCode, {
+        format: "ean13",
+        lineColor: "#000",
+        width: 2,
+        height: 80,
+        displayValue: true
+      });
     }
   </script>
 </body>
