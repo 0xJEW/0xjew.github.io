@@ -52,6 +52,7 @@
       justify-content: space-between;
       gap: 10px;
       margin-top: 22px;
+      align-items: center;
     }
     button, .fake-btn {
       flex: 1 1 0;
@@ -70,6 +71,28 @@
     button:hover, .fake-btn:hover {
       background: linear-gradient(90deg, #46a0f8 0%, #0052a3 100%);
       transform: translateY(-2px) scale(1.03);
+    }
+    .decode-btn {
+      flex: unset;
+      padding: 12px 13px 12px 13px;
+      margin: 0 0 0 5px;
+      background: #f1f1f1;
+      color: #0077cc;
+      font-size: 19px;
+      border-radius: 50%;
+      min-width: 44px;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 4px rgba(110,150,190,0.09);
+      border: none;
+      transition: background 0.18s, color 0.18s;
+    }
+    .decode-btn:active {
+      background: #d1e9ff;
+      color: #006ee6;
     }
     .result {
       text-align: center;
@@ -114,14 +137,35 @@
       min-height: 250px;
       direction: ltr;
     }
-    .button-row-reverse {
+    /* מצב פענוח */
+    .decode-container {
       display: flex;
-      gap: 10px;
-      margin-top: 10px;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 35px;
     }
-    .button-row-reverse button {
-      flex: 1 1 0;
-      margin: 0;
+    .decode-container label {
+      margin-top: 0;
+    }
+    .back-btn {
+      background: #f8fafb;
+      color: #222;
+      border-radius: 30px;
+      margin: 22px 0 0 0;
+      font-size: 16px;
+      border: none;
+      box-shadow: 0 2px 6px rgba(150,150,150,0.09);
+      font-weight: 600;
+      padding: 11px 24px;
+      transition: background 0.18s;
+      cursor: pointer;
+    }
+    .back-btn:hover {
+      background: #e4ecf8;
+    }
+    .button-row .decode-btn {
+      margin-right: 0;
+      margin-left: 0;
     }
   </style>
 </head>
@@ -129,45 +173,52 @@
   <div class="container">
     <h2>יצירת ברקוד</h2>
 
-    <label for="mode">בחר סוג:</label>
-    <select id="mode" onchange="toggleMode()">
-      <option value="vegetable">ירקות</option>
-      <option value="meat">בשר</option>
-    </select>
+    <div id="mainSection">
+      <label for="mode">בחר סוג:</label>
+      <select id="mode" onchange="toggleMode()">
+        <option value="vegetable">ירקות</option>
+        <option value="meat">בשר</option>
+      </select>
 
-    <div id="vegInputs">
-      <label for="shortCode">קוד קופה</label>
-      <input type="number" id="shortCode" placeholder="למשל: 530" />
-    </div>
-
-    <div id="meatInputs" class="hidden">
-      <label for="meatCode">ברקוד רגיל</label>
-      <div class="input-with-icon">
-        <input type="text" id="meatCode" placeholder="למשל: 7290002603740" />
-        <span class="camera-icon" id="cameraBtn" title="סרוק ברקוד" onclick="toggleScanner()">📷</span>
+      <div id="vegInputs">
+        <label for="shortCode">קוד קופה</label>
+        <input type="number" id="shortCode" placeholder="למשל: 530" />
       </div>
-      <div id="reader" class="hidden"></div>
-    </div>
 
-    <label for="weight">משקל בקילו</label>
-    <input type="number" id="weight" step="0.001" placeholder="למשל: 1.500" />
-
-    <div class="button-row">
-      <button onclick="generateBarcode()">צור ברקוד</button>
-      <button onclick="downloadBarcode()">📥 הורד ברקוד</button>
-    </div>
-
-    <div class="result" id="resultText"></div>
-    <svg id="barcodeImage"></svg>
-
-    <div id="reverseMeat" class="hidden">
-      <hr>
-      <label for="meatScan">פענוח ברקוד שקילה:</label>
-      <input type="text" id="meatScan" placeholder="למשל: 2212937001946" />
-      <div class="button-row-reverse">
-        <button onclick="decodeMeatBarcode()">פענח לברקוד רגיל</button>
+      <div id="meatInputs" class="hidden">
+        <label for="meatCode">ברקוד רגיל</label>
+        <div class="input-with-icon">
+          <input type="text" id="meatCode" placeholder="למשל: 7290002603740" />
+          <span class="camera-icon" id="cameraBtn" title="סרוק ברקוד" onclick="toggleScanner()">📷</span>
+        </div>
+        <div id="reader" class="hidden"></div>
       </div>
-      <div class="result" id="decodedResult"></div>
+
+      <label for="weight">משקל בקילו</label>
+      <input type="number" id="weight" step="0.001" placeholder="למשל: 1.500" />
+
+      <div class="button-row">
+        <button onclick="generateBarcode()">צור ברקוד</button>
+        <button onclick="downloadBarcode()">📥 הורד ברקוד</button>
+        <button type="button" id="decodeBtn" class="decode-btn hidden" title="פענוח ברקוד שקילה" onclick="showDecode()">
+          🔄
+        </button>
+      </div>
+
+      <div class="result" id="resultText"></div>
+      <svg id="barcodeImage"></svg>
+    </div>
+
+    <div id="decodeSection" class="hidden">
+      <div class="decode-container">
+        <label for="meatScan">פענוח ברקוד שקילה:</label>
+        <input type="text" id="meatScan" placeholder="למשל: 2212937001946" />
+        <div class="button-row-reverse">
+          <button onclick="decodeMeatBarcode()">פענח לברקוד רגיל</button>
+        </div>
+        <div class="result" id="decodedResult"></div>
+        <button class="back-btn" onclick="hideDecode()">⬅️ חזור</button>
+      </div>
     </div>
   </div>
 
@@ -282,11 +333,26 @@
       const mode = document.getElementById("mode").value;
       document.getElementById("vegInputs").classList.toggle("hidden", mode !== "vegetable");
       document.getElementById("meatInputs").classList.toggle("hidden", mode !== "meat");
-      document.getElementById("reverseMeat").classList.toggle("hidden", mode !== "meat");
-      // סגור סריקה אם עובר לירקות
+      // הצגת כפתור פענוח רק בבשר
+      document.getElementById("decodeBtn").classList.toggle("hidden", mode !== "meat");
       if (mode !== "meat") {
         stopScanner();
       }
+      hideDecode();
+    }
+
+    function showDecode() {
+      document.getElementById("mainSection").classList.add("hidden");
+      document.getElementById("decodeSection").classList.remove("hidden");
+      stopScanner();
+    }
+
+    function hideDecode() {
+      document.getElementById("mainSection").classList.remove("hidden");
+      document.getElementById("decodeSection").classList.add("hidden");
+      // ניקוי תוצאה של פענוח
+      document.getElementById("meatScan").value = "";
+      document.getElementById("decodedResult").innerText = "";
     }
 
     let html5Qr = null;
@@ -335,6 +401,11 @@
         scanning = false;
         if (btn) btn.classList.remove("active");
       }
+    }
+
+    // בהטענה ראשונה – לוודא שמצב פענוח מוסתר, כפתור פענוח בבשר בלבד
+    window.onload = () => {
+      toggleMode();
     }
   </script>
 </body>
