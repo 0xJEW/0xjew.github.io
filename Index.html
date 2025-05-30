@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>יצירת ברקוד</title>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     body {
       font-family: sans-serif;
@@ -52,7 +53,7 @@
       font-size: 18px;
       margin-top: 20px;
       color: #007700;
-      word-break: break-all;
+      word-break: break-word;
     }
     svg {
       display: block;
@@ -60,6 +61,21 @@
     }
     .hidden {
       display: none;
+    }
+    .input-with-icon {
+      position: relative;
+    }
+    .camera-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 20px;
+      cursor: pointer;
+    }
+    #reader {
+      width: 100%;
+      margin-top: 10px;
     }
   </style>
 </head>
@@ -80,7 +96,11 @@
 
     <div id="meatInputs" class="hidden">
       <label for="meatCode">ברקוד רגיל</label>
-      <input type="text" id="meatCode" placeholder="למשל: 7290002603740" />
+      <div class="input-with-icon">
+        <input type="text" id="meatCode" placeholder="למשל: 7290002603740" />
+        <span class="camera-icon" onclick="startScanner()">📷</span>
+      </div>
+      <div id="reader" class="hidden"></div>
     </div>
 
     <label for="weight">משקל בקילו</label>
@@ -90,6 +110,15 @@
 
     <div class="result" id="resultText"></div>
     <svg id="barcodeImage"></svg>
+    <button onclick="downloadBarcode()">📥 הורד ברקוד</button>
+
+    <div id="reverseMeat" class="hidden">
+      <hr>
+      <label for="meatScan">פענוח ברקוד שקילה:</label>
+      <input type="text" id="meatScan" placeholder="למשל: 2212937001946" />
+      <button onclick="decodeMeatBarcode()">פענח לברקוד רגיל</button>
+      <div class="result" id="decodedResult"></div>
+    </div>
   </div>
 
   <script>
@@ -112,6 +141,14 @@
       const itemCode = ean13.slice(7, 12);
       const code12 = prefix + itemCode + grams;
       return code12 + ean13Checksum(code12);
+    }
+
+    function weightToRegular(weightEan13) {
+      const c7 = weightEan13[1];
+      const itemCode = weightEan13.slice(2, 7);
+      const base12 = "729000" + c7 + itemCode;
+      const checksum = ean13Checksum(base12);
+      return base12 + checksum;
     }
 
     function generateBarcode() {
@@ -156,10 +193,68 @@
       });
     }
 
+    function downloadBarcode() {
+      const svg = document.getElementById("barcodeImage");
+      const serializer = new XMLSerializer();
+      const svgBlob = new Blob([serializer.serializeToString(svg)], { type: "image/svg+xml" });
+      const url = URL.createObjectURL(svgBlob);
+
+      const img = new Image();
+      img.onload = function () {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+
+        const link = document.createElement("a");
+        link.href = canvas.toDataURL("image/png");
+        link.download = "barcode.png";
+        link.click();
+        URL.revokeObjectURL(url);
+      };
+      img.src = url;
+    }
+
+    function decodeMeatBarcode() {
+      const input = document.getElementById("meatScan").value;
+      if (!input || input.length !== 13 || input[0] !== "2") {
+        document.getElementById("decodedResult").innerText = "ברקוד שקילה לא תקני.";
+        return;
+      }
+      const original = weightToRegular(input);
+      document.getElementById("decodedResult").innerText = "ברקוד רגיל: " + original;
+    }
+
     function toggleMode() {
       const mode = document.getElementById("mode").value;
       document.getElementById("vegInputs").classList.toggle("hidden", mode !== "vegetable");
       document.getElementById("meatInputs").classList.toggle("hidden", mode !== "meat");
+      document.getElementById("reverseMeat").classList.toggle("hidden", mode !== "meat");
+    }
+
+    let html5Qr;
+    function startScanner() {
+      const reader = document.getElementById("reader");
+      reader.classList.remove("hidden");
+
+      html5Qr = new Html5Qrcode("reader");
+      Html5Qrcode.getCameras().then(cameras => {
+        if (cameras && cameras.length) {
+          html5Qr.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: 250 },
+            code => {
+              document.getElementById("meatCode").value = code;
+              html5Qr.stop();
+              reader.classList.add("hidden");
+            },
+            err => {}
+          );
+        }
+      });
     }
   </script>
 </body>
