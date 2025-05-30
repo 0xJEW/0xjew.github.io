@@ -18,46 +18,69 @@
       margin: auto;
       background: #fff;
       padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
     }
     h2 {
       text-align: center;
       color: #333;
+      letter-spacing: 1px;
+      margin-bottom: 22px;
     }
     label {
       margin-top: 15px;
       display: block;
       font-weight: bold;
     }
-    select, input, button {
+    select, input {
       width: 100%;
-      padding: 10px;
-      font-size: 16px;
+      padding: 12px 10px;
+      font-size: 17px;
       margin-top: 5px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+      border: 1.2px solid #bbc8d4;
+      border-radius: 10px;
       box-sizing: border-box;
+      transition: border 0.2s;
+      background: #f8fafb;
+      outline: none;
     }
-    button {
-      background-color: #007BFF;
+    select:focus, input:focus {
+      border: 1.2px solid #6ca3f7;
+    }
+    .button-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 22px;
+    }
+    button, .fake-btn {
+      flex: 1 1 0;
+      padding: 12px;
+      font-size: 16px;
+      border: none;
+      border-radius: 30px;
+      background: linear-gradient(90deg, #69b7fa 0%, #006ee6 100%);
       color: white;
+      font-weight: 600;
       cursor: pointer;
-      margin-top: 20px;
+      transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+      box-shadow: 0 2px 6px rgba(100,110,140,0.11);
+      margin: 0;
     }
-    button:hover {
-      background-color: #0056b3;
+    button:hover, .fake-btn:hover {
+      background: linear-gradient(90deg, #46a0f8 0%, #0052a3 100%);
+      transform: translateY(-2px) scale(1.03);
     }
     .result {
       text-align: center;
       font-size: 18px;
       margin-top: 20px;
-      color: #007700;
+      color: #0c8339;
       word-break: break-word;
     }
     svg {
       display: block;
-      margin: 20px auto;
+      margin: 20px auto 0 auto;
     }
     .hidden {
       display: none;
@@ -67,15 +90,38 @@
     }
     .camera-icon {
       position: absolute;
-      left: 10px;
+      left: 8px;
       top: 50%;
       transform: translateY(-50%);
-      font-size: 20px;
+      font-size: 23px;
       cursor: pointer;
+      user-select: none;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+      z-index: 2;
+    }
+    .camera-icon.active {
+      color: #0e85d7;
+      opacity: 1;
     }
     #reader {
       width: 100%;
       margin-top: 10px;
+      border-radius: 12px;
+      box-shadow: 0 0 8px #bbdefb;
+      overflow: hidden;
+      background: #1a2231;
+      min-height: 250px;
+      direction: ltr;
+    }
+    .button-row-reverse {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .button-row-reverse button {
+      flex: 1 1 0;
+      margin: 0;
     }
   </style>
 </head>
@@ -98,7 +144,7 @@
       <label for="meatCode">ברקוד רגיל</label>
       <div class="input-with-icon">
         <input type="text" id="meatCode" placeholder="למשל: 7290002603740" />
-        <span class="camera-icon" onclick="startScanner()">📷</span>
+        <span class="camera-icon" id="cameraBtn" title="סרוק ברקוד" onclick="toggleScanner()">📷</span>
       </div>
       <div id="reader" class="hidden"></div>
     </div>
@@ -106,17 +152,21 @@
     <label for="weight">משקל בקילו</label>
     <input type="number" id="weight" step="0.001" placeholder="למשל: 1.500" />
 
-    <button onclick="generateBarcode()">צור ברקוד</button>
+    <div class="button-row">
+      <button onclick="generateBarcode()">צור ברקוד</button>
+      <button onclick="downloadBarcode()">📥 הורד ברקוד</button>
+    </div>
 
     <div class="result" id="resultText"></div>
     <svg id="barcodeImage"></svg>
-    <button onclick="downloadBarcode()">📥 הורד ברקוד</button>
 
     <div id="reverseMeat" class="hidden">
       <hr>
       <label for="meatScan">פענוח ברקוד שקילה:</label>
       <input type="text" id="meatScan" placeholder="למשל: 2212937001946" />
-      <button onclick="decodeMeatBarcode()">פענח לברקוד רגיל</button>
+      <div class="button-row-reverse">
+        <button onclick="decodeMeatBarcode()">פענח לברקוד רגיל</button>
+      </div>
       <div class="result" id="decodedResult"></div>
     </div>
   </div>
@@ -233,13 +283,25 @@
       document.getElementById("vegInputs").classList.toggle("hidden", mode !== "vegetable");
       document.getElementById("meatInputs").classList.toggle("hidden", mode !== "meat");
       document.getElementById("reverseMeat").classList.toggle("hidden", mode !== "meat");
+      // סגור סריקה אם עובר לירקות
+      if (mode !== "meat") {
+        stopScanner();
+      }
     }
 
-    let html5Qr;
-    function startScanner() {
+    let html5Qr = null;
+    let scanning = false;
+    function toggleScanner() {
       const reader = document.getElementById("reader");
+      const btn = document.getElementById("cameraBtn");
+      if (scanning) {
+        stopScanner();
+        btn.classList.remove("active");
+        return;
+      }
       reader.classList.remove("hidden");
-
+      btn.classList.add("active");
+      scanning = true;
       html5Qr = new Html5Qrcode("reader");
       Html5Qrcode.getCameras().then(cameras => {
         if (cameras && cameras.length) {
@@ -248,13 +310,31 @@
             { fps: 10, qrbox: 250 },
             code => {
               document.getElementById("meatCode").value = code;
-              html5Qr.stop();
-              reader.classList.add("hidden");
+              stopScanner();
             },
             err => {}
           );
         }
       });
+    }
+    function stopScanner() {
+      const reader = document.getElementById("reader");
+      const btn = document.getElementById("cameraBtn");
+      if (html5Qr && scanning) {
+        html5Qr.stop().then(() => {
+          reader.classList.add("hidden");
+          scanning = false;
+          btn.classList.remove("active");
+        }).catch(() => {
+          reader.classList.add("hidden");
+          scanning = false;
+          btn.classList.remove("active");
+        });
+      } else {
+        reader.classList.add("hidden");
+        scanning = false;
+        if (btn) btn.classList.remove("active");
+      }
     }
   </script>
 </body>
